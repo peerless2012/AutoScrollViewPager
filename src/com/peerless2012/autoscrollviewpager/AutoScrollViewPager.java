@@ -1,13 +1,16 @@
 package com.peerless2012.autoscrollviewpager;
 
 import java.util.ArrayList;
+
 import android.content.Context;
 import android.database.DataSetObserver;
+import android.os.SystemClock;
 import android.support.annotation.IntDef;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -40,8 +43,6 @@ public class AutoScrollViewPager extends ViewPager {
 	
 	private int mLoopTime = LOOP_DEFAULT_TIME;
 	
-	private boolean mIsRunning = true;
-	
 	private LoopRunnable mLoopRunnable;
 	
 	private PagerAdapter mOutterPagerAdapter;
@@ -55,6 +56,14 @@ public class AutoScrollViewPager extends ViewPager {
 	private ArrayList<OnPageChangeListener> mOnPageChangeListeners;
 	
 	private int mCurrentItem;
+	
+	private long mDelaySendTime;
+	
+	private long mMovementDownTime;
+	
+	private long mMovementUpTime;
+	
+	private boolean isLooping = true;
 	
 	public AutoScrollViewPager(Context context) {
 		this(context,null);
@@ -76,6 +85,7 @@ public class AutoScrollViewPager extends ViewPager {
 		super.onAttachedToWindow();
 		super.addOnPageChangeListener(mInnerOnPageChangeListener);
 		removeCallbacks(mLoopRunnable);
+		mDelaySendTime = System.currentTimeMillis();
 		postDelayed(mLoopRunnable, mLoopTime);
 	}
 	
@@ -116,13 +126,14 @@ public class AutoScrollViewPager extends ViewPager {
 	}
 	
 	public void start() {
-		mIsRunning = true;
+		isLooping = true;
 		removeCallbacks(mLoopRunnable);
+		mDelaySendTime = System.currentTimeMillis();
 		postDelayed(mLoopRunnable, mLoopTime);
 	}
 	
 	public void stop() {
-		mIsRunning = false;
+		isLooping = false;
 		removeCallbacks(mLoopRunnable);
 	}
 	
@@ -135,9 +146,10 @@ public class AutoScrollViewPager extends ViewPager {
 	}
 	
 	private void moveToNext() {
+		mDelaySendTime = System.currentTimeMillis();
 		postDelayed(mLoopRunnable, mLoopTime);
 		int count = mInnerPagerAdapter.getCount();
-		if (!mIsRunning || count == 0) return;
+		if (!isLooping || count == 0) return;
 		int currentItem = super.getCurrentItem();
 		setCurrentItem(mScrollOrientation == SCROLL_ORIENTATION_RIGHT_TO_LEFT ? ++currentItem : --currentItem,true);
 	}
@@ -156,6 +168,22 @@ public class AutoScrollViewPager extends ViewPager {
 			setCurrentItem(targetItem,false);
 			mCurrentItem = targetItem;
 		}
+	}
+	
+	@Override
+	public boolean onTouchEvent(MotionEvent ev) {
+		if (isLooping) {
+			if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+				mMovementDownTime = System.currentTimeMillis();
+				removeCallbacks(mLoopRunnable);
+			}else if (ev.getAction() == MotionEvent.ACTION_UP 
+					|| ev.getAction() == MotionEvent.ACTION_CANCEL) {
+				mMovementUpTime = System.currentTimeMillis();
+				long newDelay = (mMovementDownTime - mDelaySendTime) % mLoopTime;
+				postDelayed(mLoopRunnable, newDelay);
+			}
+		}
+		return super.onTouchEvent(ev);
 	}
 	
 	class LoopRunnable implements Runnable{
