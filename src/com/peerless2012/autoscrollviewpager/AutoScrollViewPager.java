@@ -21,26 +21,26 @@ import android.view.ViewGroup;
 public class AutoScrollViewPager extends ViewPager {
 	
 	/**
-	 * 向左滚动
+	 * 从右向左向左滚动
 	 */
-	public final static int SCROLL_ORIENTATION_LEFT = 0x00;
+	public final static int SCROLL_ORIENTATION_RIGHT_TO_LEFT = 0x00;
 	
 	/**
-	 * 向右滚动
+	 * 从左向右向右滚动
 	 */
-	public final static int SCROLL_ORIENTATION_RIGHT = 0x01;
+	public final static int SCROLL_ORIENTATION_LEFT_TO_RIGHT = 0x01;
 	
-	@IntDef({SCROLL_ORIENTATION_LEFT,SCROLL_ORIENTATION_RIGHT})
+	@IntDef({SCROLL_ORIENTATION_RIGHT_TO_LEFT,SCROLL_ORIENTATION_LEFT_TO_RIGHT})
 	public @interface SCROLL_ORIENTATION{};
 	
 	@SCROLL_ORIENTATION
-	private int mScrollOrientation = SCROLL_ORIENTATION_LEFT;
+	private int mScrollOrientation = SCROLL_ORIENTATION_RIGHT_TO_LEFT;
 	
 	private final static int LOOP_DEFAULT_TIME = 3000;
 	
 	private int mLoopTime = LOOP_DEFAULT_TIME;
 	
-	private boolean mIsRunning = false;
+	private boolean mIsRunning = true;
 	
 	private LoopRunnable mLoopRunnable;
 	
@@ -54,6 +54,8 @@ public class AutoScrollViewPager extends ViewPager {
 	
 	private ArrayList<OnPageChangeListener> mOnPageChangeListeners;
 	
+	private int mCurrentItem;
+	
 	public AutoScrollViewPager(Context context) {
 		this(context,null);
 	}
@@ -64,7 +66,9 @@ public class AutoScrollViewPager extends ViewPager {
 		mLoopRunnable = new LoopRunnable();
 		mInnerPagerAdapter = new InnerPagerAdapter();
 		mInnerDataSetObserver = new InnerDataSetObserver();
+		mInnerOnPageChangeListener = new InnerOnPageChangeListener();
 		mOnPageChangeListeners = new ArrayList<OnPageChangeListener>();
+		
 	}
 
 	@Override
@@ -88,6 +92,7 @@ public class AutoScrollViewPager extends ViewPager {
 		if (mOutterPagerAdapter == null) return;
 		mOutterPagerAdapter.registerDataSetObserver(mInnerDataSetObserver);
 		super.setAdapter(mInnerPagerAdapter);
+		setCurrentItem(1, false);
 	}
 	
 	@Override
@@ -103,11 +108,11 @@ public class AutoScrollViewPager extends ViewPager {
 	/**
 	 * 设置滚动的方向
 	 * @param orientation 滚动方向
-	 * <p>{@link #SCROLL_ORIENTATION_LEFT} 从右向左滚动</p>
-	 * <p>{@link #SCROLL_ORIENTATION_RIGHT} 从左向右滚动</p>
+	 * <p>{@link #SCROLL_ORIENTATION_RIGHT_TO_LEFT} 从右向左滚动</p>
+	 * <p>{@link #SCROLL_ORIENTATION_LEFT_TO_RIGHT} 从左向右滚动</p>
 	 */
 	public void setScrollOrientation(@SCROLL_ORIENTATION int orientation) {
-		
+		mScrollOrientation = orientation;
 	}
 	
 	public void start() {
@@ -133,8 +138,24 @@ public class AutoScrollViewPager extends ViewPager {
 		postDelayed(mLoopRunnable, mLoopTime);
 		int count = mInnerPagerAdapter.getCount();
 		if (!mIsRunning || count == 0) return;
-		int currentItem = getCurrentItem();
-//		setCurrentItem(mScrollOrientation == SCROLL_ORIENTATION_LEFT ? ++currentItem : --currentItem, false);
+		int currentItem = super.getCurrentItem();
+		setCurrentItem(mScrollOrientation == SCROLL_ORIENTATION_RIGHT_TO_LEFT ? ++currentItem : --currentItem,true);
+	}
+	
+	private void checkItemPosition() {
+		Log.i("AutoScrollViewPager", "checkItemPosition");
+		int currentItem = super.getCurrentItem();
+		int itemCount = mInnerPagerAdapter.getCount();
+		int targetItem = -1;
+		if (currentItem == 0) {
+			targetItem = itemCount -2;
+		}else if (currentItem == itemCount -1) {
+			targetItem = 1;
+		}
+		if (targetItem >= 0) {
+			setCurrentItem(targetItem,false);
+			mCurrentItem = targetItem;
+		}
 	}
 	
 	class LoopRunnable implements Runnable{
@@ -205,12 +226,14 @@ public class AutoScrollViewPager extends ViewPager {
 		public void onChanged() {
 			super.onChanged();
 			mInnerPagerAdapter.notifyDataSetChanged();
+			setCurrentItem(1, false);
 		}
 
 		@Override
 		public void onInvalidated() {
 			super.onInvalidated();
 			mInnerPagerAdapter.notifyDataSetChanged();
+			setCurrentItem(1, false);
 		}
 		
 	}
@@ -222,36 +245,45 @@ public class AutoScrollViewPager extends ViewPager {
 	* @Version V1.0
 	* @Description: ViewPager滚动监听
 	*/
-	class InnerPagerScroll implements OnPageChangeListener{
+	class InnerOnPageChangeListener implements OnPageChangeListener{
 
 		@Override
 		public void onPageScrolled(int position, float positionOffset,
 				int positionOffsetPixels) {
-			Log.i("AutoScrollViewPager", "onPageScrolled positon = " + position +"   positionOffset = " + positionOffset+"   positionOffsetPixels = "+positionOffsetPixels);
+			//如果设置条目的时候，不选择平滑滚动则只会调用此放法一次，其他方法都不回调用。
+			int realPosition =mInnerPagerAdapter.getRealPosition(position);
+			Log.i("AutoScrollViewPager", "onPageScrolled positon = " + position +"   realPosition = "+realPosition +"   positionOffset = " + positionOffset+"   positionOffsetPixels = "+positionOffsetPixels);
 			for (OnPageChangeListener l : mOnPageChangeListeners) {
-				l.onPageScrolled(mInnerPagerAdapter.getRealPosition(position), positionOffset, positionOffsetPixels);
+				l.onPageScrolled(realPosition, positionOffset, positionOffsetPixels);
 			}
 		}
 
 		@Override
 		public void onPageSelected(int position) {
-			Log.i("AutoScrollViewPager", "onPageSelected positon = " + position);
+			int realPosition =mInnerPagerAdapter.getRealPosition(position);
+			mCurrentItem = realPosition;
+			Log.i("AutoScrollViewPager", "onPageSelected positon = " + realPosition);
 			for (OnPageChangeListener l : mOnPageChangeListeners) {
-				l.onPageSelected(mInnerPagerAdapter.getRealPosition(position));
+				l.onPageSelected(realPosition);
 			}
 		}
 
 		@Override
 		public void onPageScrollStateChanged(int state) {
-			Log.i("AutoScrollViewPager", "onPageSelected onPageScrollStateChanged = " + state);
+			Log.i("AutoScrollViewPager", "onPageScrollStateChanged onPageScrollStateChanged = " + state);
 			for (OnPageChangeListener l : mOnPageChangeListeners) {
 				l.onPageScrollStateChanged(state);
 			}
 			
 			if (state == SCROLL_STATE_IDLE) {
-				Log.i("AutoScrollViewPager", "onPageSelected onPageScrollStateChanged = 空闲");
+				Log.i("AutoScrollViewPager", "onPageScrollStateChanged onPageScrollStateChanged = 空闲");
+				checkItemPosition();
 			}
 		}
-		
+	}
+	
+	@Override
+	public int getCurrentItem() {
+		return mCurrentItem;
 	}
 }

@@ -7,6 +7,6 @@
     <com.peerless2012.autoscrollviewpager.AutoScrollViewPager
         android:id="@+id/auto_scroll_viewpager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="200dp" />
 
 </RelativeLayout>

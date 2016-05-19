@@ -1,5 +1,8 @@
 package com.peerless2012.autoscrollviewpager;
 
+import java.util.Random;
+
+import android.graphics.Color;
 import android.support.v4.view.PagerAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,7 +17,8 @@ import android.widget.TextView;
 * @Description: 广告图片无限轮播
 */
 public class AdPagerAdapter extends PagerAdapter {
-
+	private Random mRandom = new Random();
+	
 	private LayoutInflater mLayoutInflater;
 	
 	@Override
@@ -41,6 +45,7 @@ public class AdPagerAdapter extends PagerAdapter {
 		TextView tv = (TextView) view.findViewById(R.id.tv);
 		tv.setText("当前索引   "+position);
 		container.addView(view);
+		container.setBackgroundColor(Color.argb(100, mRandom.nextInt(255), mRandom.nextInt(255), mRandom.nextInt(255)));
 		return view;
 	}
 }
