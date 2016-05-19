@@ -1,10 +1,8 @@
 package com.peerless2012.autoscrollviewpager;
 
 import java.util.ArrayList;
-
 import android.content.Context;
 import android.database.DataSetObserver;
-import android.os.SystemClock;
 import android.support.annotation.IntDef;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
