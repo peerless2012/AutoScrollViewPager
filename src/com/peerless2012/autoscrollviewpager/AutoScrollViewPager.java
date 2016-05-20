@@ -1,6 +1,8 @@
 package com.peerless2012.autoscrollviewpager;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.support.annotation.IntDef;
@@ -11,6 +13,9 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Interpolator;
+import android.view.animation.OvershootInterpolator;
+import android.widget.Scroller;
 
 /**
 * @Author peerless2012
@@ -63,6 +68,12 @@ public class AutoScrollViewPager extends ViewPager {
 	
 	private boolean isLooping = true;
 	
+	private static final Interpolator sInterpolator = new Interpolator() {
+        public float getInterpolation(float t) {
+            t -= 1.0f;
+            return t * t * t * t * t + 1.0f;
+        }
+    };
 	public AutoScrollViewPager(Context context) {
 		this(context,null);
 	}
@@ -75,6 +86,18 @@ public class AutoScrollViewPager extends ViewPager {
 		mInnerDataSetObserver = new InnerDataSetObserver();
 		mInnerOnPageChangeListener = new InnerOnPageChangeListener();
 		mOnPageChangeListeners = new ArrayList<OnPageChangeListener>();
+		
+		try {  
+            Field field = ViewPager.class.getDeclaredField("mScroller");  
+            field.setAccessible(true);  
+            ViewPagerScroller viewPagerScroller = new ViewPagerScroller(this.getContext(), sInterpolator);  
+            field.set(this, viewPagerScroller);  
+            viewPagerScroller.setDuration(1500);  
+        } catch (NoSuchFieldException e) {  
+            e.printStackTrace();  
+        } catch (IllegalAccessException e) {  
+            e.printStackTrace();  
+        }  
 		
 	}
 
@@ -311,5 +334,32 @@ public class AutoScrollViewPager extends ViewPager {
 	@Override
 	public int getCurrentItem() {
 		return mCurrentItem;
+	}
+	
+	public class ViewPagerScroller extends Scroller {  
+	    private int mDuration;  
+	  
+	    public ViewPagerScroller(Context context) {  
+	        super(context);  
+	    }  
+	  
+	    public ViewPagerScroller(Context context, Interpolator interpolator) {  
+	        super(context, interpolator);  
+	    }  
+	  
+	    public void setDuration(int mDuration) {  
+	        this.mDuration = mDuration;  
+	    }  
+	  
+	    @Override  
+	    public void startScroll(int startX, int startY, int dx, int dy) {  
+	        super.startScroll(startX, startY, dx, dy, this.mDuration);  
+	    }  
+	  
+	    @Override  
+	    public void startScroll(int startX, int startY, int dx, int dy, int duration) {  
+	        super.startScroll(startX, startY, dx, dy, this.mDuration);  
+	    }  
+	  
 	}
 }
