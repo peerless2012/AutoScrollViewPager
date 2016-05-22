@@ -18,9 +18,19 @@ import android.widget.TextView;
 */
 public class AdPagerAdapter extends PagerAdapter {
 	private Random mRandom = new Random();
-	
+	private int[][] colors = new int[3][];
 	private LayoutInflater mLayoutInflater;
 	
+	public AdPagerAdapter() {
+		super();
+		for (int i = 0; i < colors.length; i++) {
+			colors[i] = new int[3];
+			for (int j = 0; j < 3; j++) {
+				colors[i][j] = mRandom.nextInt(255);
+			}
+		}
+	}
+
 	@Override
 	public int getCount() {
 		return 3;
@@ -45,7 +55,8 @@ public class AdPagerAdapter extends PagerAdapter {
 		TextView tv = (TextView) view.findViewById(R.id.tv);
 		tv.setText("当前索引   "+position);
 		container.addView(view);
-		container.setBackgroundColor(Color.argb(100, mRandom.nextInt(255), mRandom.nextInt(255), mRandom.nextInt(255)));
+		int[] color = colors[position];
+		view.setBackgroundColor(Color.argb(100, color[0], color[1], color[2]));
 		return view;
 	}
 }

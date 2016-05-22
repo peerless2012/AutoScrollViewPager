@@ -2,7 +2,6 @@ package com.peerless2012.autoscrollviewpager;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.support.annotation.IntDef;
@@ -14,7 +13,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Interpolator;
-import android.view.animation.OvershootInterpolator;
 import android.widget.Scroller;
 
 /**
