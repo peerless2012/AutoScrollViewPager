@@ -2,7 +2,6 @@ package com.peerless2012.autoscrollviewpager;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.support.annotation.IntDef;
@@ -79,8 +78,6 @@ public class AutoScrollViewPager extends ViewPager {
 	private long mDelaySendTime;
 	
 	private long mMovementDownTime;
-	
-	private long mMovementUpTime;
 	
 	private boolean isLooping = true;
 	
@@ -235,7 +232,6 @@ public class AutoScrollViewPager extends ViewPager {
 				removeCallbacks(mLoopRunnable);
 			}else if (ev.getAction() == MotionEvent.ACTION_UP 
 					|| ev.getAction() == MotionEvent.ACTION_CANCEL) {
-				mMovementUpTime = System.currentTimeMillis();
 				long newDelay = (mMovementDownTime - mDelaySendTime) % mLoopTime;
 				postDelayed(mLoopRunnable, newDelay);
 			}
@@ -243,11 +239,18 @@ public class AutoScrollViewPager extends ViewPager {
 		return super.onTouchEvent(ev);
 	}
 	
+	/**
+	* @Author peerless2012
+	* @Email  peerless2012@126.com
+	* @HomePage http://peerless2012.github.io
+	* @DateTime 2016年5月26日 下午3:03:27
+	* @Version V1.0
+	* @Description: 循环的Runnable 
+	*/
 	class LoopRunnable implements Runnable{
 
 		@Override
 		public void run() {
-			Log.i("AutoScrollViewPager", "执行切换");
 			moveToNext();
 		}
 	}

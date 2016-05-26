@@ -1,9 +1,16 @@
 package com.peerless2012.autoscrollviewpager.transformer;
 
 import android.support.v4.view.ViewPager;
-import android.util.Log;
 import android.view.View;
 
+/**
+* @Author peerless2012
+* @Email  peerless2012@126.com
+* @HomePage http://peerless2012.github.io
+* @DateTime 2016年5月26日 下午3:04:45
+* @Version V1.0
+* @Description: 放大进入效果
+*/
 public class ScaleInTransformer implements ViewPager.PageTransformer {
 	public static final float DEFAULT_CENTER = 0.5f;
 	private static final float DEFAULT_MIN_SCALE = 0.60f;
@@ -11,7 +18,6 @@ public class ScaleInTransformer implements ViewPager.PageTransformer {
 
 	@Override
 	public void transformPage(View page, float position) {
-		Log.i("ScaleInTransformer","position = "+position+ ",   page = "+page);
 		int pageWidth = page.getWidth();
 		int pageHeight = page.getHeight();
 

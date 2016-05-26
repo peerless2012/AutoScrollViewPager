@@ -3,6 +3,14 @@ package com.peerless2012.autoscrollviewpager.transformer;
 import android.support.v4.view.ViewPager;
 import android.view.View;
 
+/**
+* @Author peerless2012
+* @Email  peerless2012@126.com
+* @HomePage http://peerless2012.github.io
+* @DateTime 2016年5月26日 下午3:04:20
+* @Version V1.0
+* @Description: 透明度渐变
+*/
 public class AlphaPageTransformer implements ViewPager.PageTransformer {
 	private static final float DEFAULT_MIN_ALPHA = 0.6f;
 	private float mMinAlpha = DEFAULT_MIN_ALPHA;
