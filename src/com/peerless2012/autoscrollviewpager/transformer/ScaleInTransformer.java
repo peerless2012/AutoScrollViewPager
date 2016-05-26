@@ -1,6 +1,7 @@
 package com.peerless2012.autoscrollviewpager.transformer;
 
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.View;
 
 public class ScaleInTransformer implements ViewPager.PageTransformer {
@@ -10,6 +11,7 @@ public class ScaleInTransformer implements ViewPager.PageTransformer {
 
 	@Override
 	public void transformPage(View page, float position) {
+		Log.i("ScaleInTransformer","position = "+position+ ",   page = "+page);
 		int pageWidth = page.getWidth();
 		int pageHeight = page.getHeight();
 
