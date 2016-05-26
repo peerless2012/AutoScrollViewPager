@@ -8,6 +8,8 @@ import android.database.DataSetObserver;
 import android.support.annotation.IntDef;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v4.view.ViewPager.LayoutParams;
+import android.support.v4.view.ViewPager.PageTransformer;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
@@ -86,6 +88,8 @@ public class AutoScrollViewPager extends ViewPager {
 	
 	private int mAutoIncrease = DEFAULT_AUTO_INCREASE;
 	
+	private PageTransformer mInnerPageTransformer;
+	
 	private static final Interpolator sInterpolator = new Interpolator() {
         public float getInterpolation(float t) {
             t -= 1.0f;
@@ -147,6 +151,13 @@ public class AutoScrollViewPager extends ViewPager {
 		mOutterPagerAdapter.registerDataSetObserver(mInnerDataSetObserver);
 		super.setAdapter(mInnerPagerAdapter);
 		setCurrentItem(mAutoIncrease, false);
+	}
+	
+	@Override
+	public void setPageTransformer(boolean reverseDrawingOrder,
+			PageTransformer transformer) {
+		super.setPageTransformer(reverseDrawingOrder, transformer);
+		mInnerPageTransformer = transformer;
 	}
 	
 	@Override
@@ -217,8 +228,33 @@ public class AutoScrollViewPager extends ViewPager {
 			targetItem = mAutoIncrease;
 		}
 		if (targetItem >= 0) {
-			setCurrentItem(targetItem,false);
+			setCurrentItem(targetItem, false);
 			mCurrentItem = targetItem;
+			// 暂时解决，但是还是会闪一下
+			if (mInnerPageTransformer != null) {
+				post(new Runnable() {
+					
+					@Override
+					public void run() {
+						final int scrollX = getScrollX();
+						final int childCount = getChildCount();
+						for (int i = 0; i < childCount; i++) {
+							final View child = getChildAt(i);
+							final LayoutParams lp = (LayoutParams) child
+									.getLayoutParams();
+							
+							if (lp.isDecor)
+								continue;
+							int clientWidth = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
+							final float transformPos = (float) (child.getLeft() - scrollX)
+									/ clientWidth;
+							Log.i("AutoScrollViewPagerRemedy","transformPos = "+ transformPos+", child = "+ child.toString() );
+							mInnerPageTransformer.transformPage(child, transformPos);
+						}
+					}
+				});
+				
+			}
 		}
 	}
 	
@@ -346,6 +382,22 @@ public class AutoScrollViewPager extends ViewPager {
 			for (OnPageChangeListener l : mOnPageChangeListeners) {
 				l.onPageSelected(realPosition);
 			}
+			/*if (mInnerPageTransformer != null) {
+				final int scrollX = getScrollX();
+				final int childCount = getChildCount();
+				for (int i = 0; i < childCount; i++) {
+					final View child = getChildAt(i);
+					final LayoutParams lp = (LayoutParams) child
+							.getLayoutParams();
+
+					if (lp.isDecor)
+						continue;
+					int clientWidth = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
+					final float transformPos = (float) (child.getLeft() - scrollX)
+							/ clientWidth;
+					mInnerPageTransformer.transformPage(child, transformPos);
+				}
+			}*/
 		}
 
 		@Override
