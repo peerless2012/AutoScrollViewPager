@@ -2,6 +2,7 @@ package com.peerless2012.autoscrollviewpager;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.support.annotation.IntDef;
@@ -9,6 +10,7 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +25,22 @@ import android.widget.Scroller;
 * @Description: 自动滚动的无限轮播的ViewPager,注意：本自定义控件不适于用到带有指示器等。
 */
 public class AutoScrollViewPager extends ViewPager {
+	
+	/**
+	 * 自动追加到集合前后的条目个数
+	 */
+	public final static int DEFAULT_AUTO_INCREASE = 2;
+	
+	
+	/**
+	 * ViewPager中，Pager之间的间距（dp）
+	 */
+	public final static int DEFAULT_PAGE_MARGIN = 10;
+	
+	/**
+	 * 页面切换动画的时间间隔
+	 */
+	public final static int DEFAULT_SCROLL_TIME = 1500;
 	
 	/**
 	 * 从右向左向左滚动
@@ -66,6 +84,8 @@ public class AutoScrollViewPager extends ViewPager {
 	
 	private boolean isLooping = true;
 	
+	private int mAutoIncrease = DEFAULT_AUTO_INCREASE;
+	
 	private static final Interpolator sInterpolator = new Interpolator() {
         public float getInterpolation(float t) {
             t -= 1.0f;
@@ -79,6 +99,10 @@ public class AutoScrollViewPager extends ViewPager {
 	public AutoScrollViewPager(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		
+		boolean clipToPadding = attrs.getAttributeBooleanValue(android.R.attr.clipToPadding, true);
+		if (clipToPadding) {
+			// 需要更改左右了
+		}
 		mLoopRunnable = new LoopRunnable();
 		mInnerPagerAdapter = new InnerPagerAdapter();
 		mInnerDataSetObserver = new InnerDataSetObserver();
@@ -90,13 +114,14 @@ public class AutoScrollViewPager extends ViewPager {
             field.setAccessible(true);  
             ViewPagerScroller viewPagerScroller = new ViewPagerScroller(this.getContext(), sInterpolator);  
             field.set(this, viewPagerScroller);  
-            viewPagerScroller.setDuration(1500);  
+            viewPagerScroller.setDuration(DEFAULT_SCROLL_TIME);  
         } catch (NoSuchFieldException e) {  
             e.printStackTrace();  
         } catch (IllegalAccessException e) {  
             e.printStackTrace();  
         }  
-		
+		int marginPixels = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, DEFAULT_PAGE_MARGIN, getResources().getDisplayMetrics());
+		setPageMargin(marginPixels);
 	}
 
 	@Override
@@ -121,7 +146,7 @@ public class AutoScrollViewPager extends ViewPager {
 		if (mOutterPagerAdapter == null) return;
 		mOutterPagerAdapter.registerDataSetObserver(mInnerDataSetObserver);
 		super.setAdapter(mInnerPagerAdapter);
-		setCurrentItem(1, false);
+		setCurrentItem(mAutoIncrease, false);
 	}
 	
 	@Override
@@ -164,6 +189,15 @@ public class AutoScrollViewPager extends ViewPager {
 		mLoopTime = time;
 	}
 	
+	/**
+	 * 在原始数据左右两端追加的数据个数，用来实现平滑滚动和不出现视觉空白
+	 * @param count 个数
+	 */
+	public void setAutoIncreaseCount(int count) {
+		mAutoIncrease = count;
+		mInnerPagerAdapter.notifyDataSetChanged();
+	}
+	
 	private void moveToNext() {
 		mDelaySendTime = System.currentTimeMillis();
 		postDelayed(mLoopRunnable, mLoopTime);
@@ -174,14 +208,13 @@ public class AutoScrollViewPager extends ViewPager {
 	}
 	
 	private void checkItemPosition() {
-		Log.i("AutoScrollViewPager", "checkItemPosition");
 		int currentItem = super.getCurrentItem();
 		int itemCount = mInnerPagerAdapter.getCount();
 		int targetItem = -1;
-		if (currentItem == 0) {
-			targetItem = itemCount -2;
-		}else if (currentItem == itemCount -1) {
-			targetItem = 1;
+		if (currentItem == mAutoIncrease -1) {
+			targetItem = itemCount - 1 -mAutoIncrease;
+		}else if (currentItem == itemCount - mAutoIncrease) {
+			targetItem = mAutoIncrease;
 		}
 		if (targetItem >= 0) {
 			setCurrentItem(targetItem,false);
@@ -226,7 +259,7 @@ public class AutoScrollViewPager extends ViewPager {
 		@Override
 		public int getCount() {
 			return (mOutterPagerAdapter == null || mOutterPagerAdapter.getCount() < 1) ? 
-					0 : mOutterPagerAdapter.getCount() + 2;
+					0 : mOutterPagerAdapter.getCount() + (mAutoIncrease << 1);
 		}
 
 		@Override
@@ -246,16 +279,16 @@ public class AutoScrollViewPager extends ViewPager {
 		
 		/**
 		 * 通过内部的位置获取真实位置
-		 * @param position
-		 * @return
+		 * @param position ViewPager回调的Position
+		 * @return 真实的Position
 		 */
 		public int getRealPosition(int position) {
-			if (position == 0) {
-				return getCount() -3; 
-			}else if (position ==  getCount() -1) {
-				return 0;
+			if (position < mAutoIncrease) {
+				return getCount() - (mAutoIncrease << 1) - mAutoIncrease + position; 
+			}else if (position >  getCount() - mAutoIncrease - 1) {
+				return position - (getCount() - mAutoIncrease);
 			}else {
-				return position -1;
+				return position - mAutoIncrease;
 			}
 		}
 	}
@@ -273,14 +306,14 @@ public class AutoScrollViewPager extends ViewPager {
 		public void onChanged() {
 			super.onChanged();
 			mInnerPagerAdapter.notifyDataSetChanged();
-			setCurrentItem(1, false);
+			setCurrentItem(mAutoIncrease, false);
 		}
 
 		@Override
 		public void onInvalidated() {
 			super.onInvalidated();
 			mInnerPagerAdapter.notifyDataSetChanged();
-			setCurrentItem(1, false);
+			setCurrentItem(mAutoIncrease, false);
 		}
 		
 	}

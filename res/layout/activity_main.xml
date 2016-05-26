@@ -4,9 +4,17 @@
     android:layout_height="match_parent"
     tools:context="com.peerless2012.autoscrollviewpager.MainActivity" >
 
-    <com.peerless2012.autoscrollviewpager.AutoScrollViewPager
-        android:id="@+id/auto_scroll_viewpager"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="200dp" />
+        android:layout_height="wrap_content" >
+
+        <com.peerless2012.autoscrollviewpager.AutoScrollViewPager
+        	android:clipToPadding="false"
+            android:id="@+id/auto_scroll_viewpager"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:paddingLeft="60dp"
+            android:paddingRight="60dp"/>
+    </FrameLayout>
 
 </RelativeLayout>
